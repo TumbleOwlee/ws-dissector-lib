@@ -107,4 +107,4 @@ field = {
     }
 }
 ```
-The special type *COMPOSITE* will create a substructure and allows to repeat a substructure multiple times. Each repitition will consume its own bytes. In comparison, all fields stored in the special structures *BITMASK*, *BITMASK16*, *BITMASK24*, *BITMASK32* and *BITMASK64* will get the same bytes. So, a *COMPOSITE* of four *BE_UINT32* will consume 16 bytes, but a *BITMASK32* of four *BE_UINT32* will only consume 4 bytes. Normally, a *BITMASKXX* will only contains *BE_UINTXX*.
+The special type *COMPOSITE* will create a substructure and allows to repeat a substructure multiple times. Each repitition will consume its own bytes. In comparison, all fields stored in the special structures *BITMASK*, *BITMASK16*, *BITMASK24*, *BITMASK32* and *BITMASK64* will get the same bytes. So, a *COMPOSITE* of four *BE_UINT32* will consume 16 bytes, but a *BITMASK32* of four *BE_UINT32* will only consume 4 bytes. Normally, a *BITMASKXX* will only contain fields of type *BE_UINTXX*.
