@@ -9,10 +9,10 @@ This library is still in the *very* early stage of development and only a side p
 
 ## Goals
 * **Simple**: Offer a simple configuration for complex protocols
-* **Productive**: Changes to a protocol can quickly be applied
+* **Productive**: Changes to a protocol specification can be quickly applied
 
 ## Getting started
-Copy the provided [ws-dissector-lib.lua](https://github.com/TumbleOwlee/ws-dissector-lib/blob/master/lib-ws-dissector.lua) either into your global or your personal plugin directory. The locations of the plugin directories on your system can be retrieved by opening Wireshark and navigating to **Tools/About Wireshark/Folders**. If you are running Wireshark as root, make sure to not use your user's personal plugin directory.
+Copy the provided [ws-dissector-lib.lua](https://github.com/TumbleOwlee/ws-dissector-lib/blob/master/lib-ws-dissector.lua) into your global or your personal plugin directory. The locations of the plugin directories on your system can be retrieved by opening Wireshark and navigating to **Tools/About Wireshark/Folders**. If you are running Wireshark as root, make sure to not use your user's personal plugin directory.
 
 Now, to be able to use the provided library in your custom dissector, add the following lines to your dissector:
 ```lua
@@ -21,16 +21,17 @@ Now, to be able to use the provided library in your custom dissector, add the fo
         assert(pcall(dofile, Dir.global_plugins_path()..'/lib-ws-dissector.lua'), "Could not load lib-ws-dissector.lua!")
     end
 ```
-It will automatically load the library either from your personal or global plugin directory. If you place the library or any dissector into some subdirectory, you will have to modify the search paths accordingly.
+It will automatically load the library from your personal or global plugin directory. If you place the library or any dissector into some subdirectory, you will have to modify the search paths accordingly.
 
 ### Example
-An working example is provided in [custom_protocol.lua](https://github.com/TumbleOwlee/ws-dissector-lib/blob/master/example/custom_protocol.lua). Just place it into your plugin folder and either restart Wireshark or press *Ctrl + Shift + L* to reload all plugins. Now use the tool of your choice to send some bytes. On Linux you could use *echo* and *netcat* for this purpose.
+A working example is provided in [custom_protocol.lua](https://github.com/TumbleOwlee/ws-dissector-lib/blob/master/example/custom_protocol.lua). Just place it into your plugin folder and restart Wireshark or press *Ctrl + Shift + L* to reload all plugins. Now use a tool of your choice to send some bytes. On Linux you could use *echo* and *netcat* for this purpose.
 ```bash
 echo -n -e "\x01\x02\x03\x01\x02\x03\x00\x00\00\x00\x00\x00\x01\x00\x0CHello World!" | netcat -u -p 40400 <IP> 40100
 ```
+By adding the protocol filter 'custom_protocol' the message should appear and every field, including the text with variable length, shall be correctly displayed.
 
 ## Configuration
-As much as possible, the library uses the same configuration parameter names as given by the [Wireshark Documentation](https://www.wireshark.org/docs/wsdg_html_chunked/index.html). The configuration consists of the following properties:
+For the base setup, the library uses the same property names as defined in the [Wireshark Documentation](https://www.wireshark.org/docs/wsdg_html_chunked/index.html). Additional properties are added to support various features, like replicating a given field multiple times. The configuration consists of the following properties:
 ```lua
 config = {
     -- protocol name (see 11.6.5.1) 
@@ -106,4 +107,4 @@ field = {
     }
 }
 ```
-The special type *COMPOSITE* will create a substructure and allows to repeat a substructure multiple times. For the dissection, this does not change the processing. For each field, the corresponding bytes in the buffer are reserved. In comparison, all fields stored in the special structures *BITMASK*, *BITMASK16*, *BITMASK24*, *BITMASK32* and *BITMASK64* will get the same bytes. So, a *COMPOSITE* of four *BE_UINT32* will consume 16 bytes, but a *BITMASK32* of four *BE_UINT32* will only consume 4 bytes.
+The special type *COMPOSITE* will create a substructure and allows to repeat a substructure multiple times. Each repitition will consume its own bytes. In comparison, all fields stored in the special structures *BITMASK*, *BITMASK16*, *BITMASK24*, *BITMASK32* and *BITMASK64* will get the same bytes. So, a *COMPOSITE* of four *BE_UINT32* will consume 16 bytes, but a *BITMASK32* of four *BE_UINT32* will only consume 4 bytes. Normally, a *BITMASKXX* will only contains *BE_UINTXX*.
