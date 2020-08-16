@@ -20,21 +20,6 @@ do
             description = 'Custom Protocol Port Range',
             max_value = 65535
         },
-        pre_init = function(config)
-            print("[OPTIONAL] You can access and modify the config here before anything is done.")
-        end,
-        pre_parse = function(config, protocol, table) 
-            print("[OPTIONAL] You can access config, protocol and table here before fields are generated.") 
-        end,
-        post_parse = function(config, protocol, table) 
-            print("[OPTIONAL] You can access config, protocol and table after all fields are generated. "..
-                  "All ProtoField objects are stored in the associated 'spec' entry in the table property "..
-                  "'proto_field'. It's a table containing all generated fields.")
-        end,
-        pre_dissection = function(config, protocol, buffer, pinfo, tree) 
-            print("[OPTIONAL] You can access the config, protocol and buffer, pinfo and tree object of each "..
-                  "payload here before any dissection happened.") 
-        end,
         key = { name = 'type', type_id = typeid.BE_UINT32 },
         spec = {
             { type_id = typeid.LE_UINT16, name = 'Length', abbr = 'length', base = base.DEC },
