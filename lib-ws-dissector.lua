@@ -44,7 +44,6 @@ do
 
     local function create_protofield(prefix, field_spec)
         local abbr = prefix..'.'..field_spec.abbr
-        print(abbr)
         local id = field_spec.type_id
         if id == typeid.CHAR then 
             return ProtoField.char(abbr, field_spec.name, field_spec.base, field_spec.valuestring, field_spec.mask, field_spec.desc)
