@@ -1,5 +1,5 @@
 # Wireshark Dissector Library
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)]()
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/TumbleOwlee/ws-dissector-lib/blob/master/LICENSE)
 
 ## What is it?
 This library provides an abstraction to generate [Wireshark](https://wireshark.com/) dissectors based on a given configuration. It allows fast prototyping of custom protocol dissectors with support of dissector chaining. It arises from the need for working dissectors without a guarantee of stable procotol specifications in the workplace.
@@ -12,7 +12,7 @@ This library is still in the *very* early stage of development and only a side p
 * **Productive**: Changes to a protocol can quickly be applied
 
 ## Getting started
-Copy the provided [ws-dissector-lib.lua](http://) either into your global or your personal plugin directory. The locations of the plugin directories on your system can be retrieved by opening Wireshark and navigating to **Tools/About Wireshark/Folders**. If you are running Wireshark as root, make sure to not use your user's personal plugin directory.
+Copy the provided [ws-dissector-lib.lua](https://github.com/TumbleOwlee/ws-dissector-lib/blob/master/lib-ws-dissector.lua) either into your global or your personal plugin directory. The locations of the plugin directories on your system can be retrieved by opening Wireshark and navigating to **Tools/About Wireshark/Folders**. If you are running Wireshark as root, make sure to not use your user's personal plugin directory.
 
 Now, to be able to use the provided library in your custom dissector, add the following lines to your dissector:
 ```lua
@@ -24,7 +24,7 @@ Now, to be able to use the provided library in your custom dissector, add the fo
 It will automatically load the library either from your personal or global plugin directory. If you place the library or any dissector into some subdirectory, you will have to modify the search paths accordingly.
 
 ### Example
-An working example is provided in [example.lua](http://). Just place it into your plugin folder and either restart Wireshark or press *Ctrl + Shift + L* to reload all plugins. Now use the tool of your choice to send some bytes. On Linux you could use *echo* and *netcat* for this purpose.
+An working example is provided in [custom_protocol.lua](https://github.com/TumbleOwlee/ws-dissector-lib/blob/master/example/custom_protocol.lua). Just place it into your plugin folder and either restart Wireshark or press *Ctrl + Shift + L* to reload all plugins. Now use the tool of your choice to send some bytes. On Linux you could use *echo* and *netcat* for this purpose.
 ```bash
 echo -n -e "\x01\x02\x03\x01\x02\x03\x00\x00\00\x00\x00\x00\x01\x00\x0CHello World!" | netcat -u -p 40400 <IP> 40100
 ```
