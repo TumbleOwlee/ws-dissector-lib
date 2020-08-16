@@ -5,7 +5,7 @@
 This library provides an abstraction to generate [Wireshark](https://wireshark.com/) dissectors based on a given configuration. It allows fast prototyping of custom protocol dissectors with support of dissector chaining. It arises from the need for working dissectors without a guarantee of stable procotol specifications in the workplace.
 
 ## WARNING
-This library is still in the *very* early stage of development and only a side project. Most features are supported for simple types like (unsigned) integer, string, bitmasks and compositions. Additional types like ipv4 and ipv6 with fixed sizes should also work. Special types like GUID are not tested and thus can be broken.
+This library is still in the *very* early stage of development and only a side project. Most features are supported for simple types like (unsigned) integer, string, bitmasks and compositions. Additional types like ipv4 and ipv6 with fixed sizes should also work. Special types like GUID are not tested and thus can be broken. Some types, such as RELATIVE_TIME, do not have predefined sizes at the moment, therefore if you encounter any dissector failures, try setting the size property to override defaults.
 
 ## Goals
 * **Simple**: Offer a simple configuration for complex protocols
@@ -94,6 +94,7 @@ field = {
     -- mask (see 11.6.7.1) (unused by BITMASK and COMPOSITE)
     mask = 0xFFFF,
     -- size of the field in bytes (only necessary if type size is not defined (ex. strings))
+    -- can also be used to override predefined sizes, for example to only read 5 bytes instead of 8 for UINT64
     size = 10,
     -- also possible if another field with abbr == 'type' exists to allow dynamic size on dissection
     size = 'type',

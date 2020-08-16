@@ -155,27 +155,27 @@ do
     local function get_type_size(id, size)
         if id == typeid.UINT8 or id == typeid.INT8 or id == typeid.CHAR or id == typeid.BOOL  or 
             id == typeid.BITMASK then
-            return 1
+            return size or 1
         elseif id == typeid.BE_UINT16 or id == typeid.LE_UINT16 or id == typeid.BE_INT16 or 
             id == typeid.LE_INT16 or id == typeid.BITMASK16 then
-            return 2
+            return size or 2
         elseif id == typeid.BE_UINT24 or id == typeid.LE_UINT24 or id == typeid.BE_INT24 or 
             id == typeid.LE_INT24 or id == typeid.BITMASK24 then
-            return 3
+            return size or 3
         elseif id == typeid.BE_UINT32 or id == typeid.LE_UINT32 or id == typeid.BE_INT32 or 
             id == typeid.LE_INT32 or id == typeid.FLOAT or id == typeid.IPV4 or 
             id == typeid.BITMASK32 then
-            return 4
+            return size or 4
         elseif id == typeid.ETHER then
-            return 6
+            return size or 6
         elseif id == typeid.BE_UINT64 or id == typeid.LE_UINT64 or id == typeid.BE_INT64 or 
             id == typeid.LE_INT64 or id == typeid.DOUBLE or id == typeid.BITMASK64 then
-            return 8
-        elseif id == typeid.IPV6 then
-            return 16
+            return size or 8
+        elseif id == typeid.IPV6 or id == typeid.GUID then
+            return size or 16
         elseif id == typeid.STRING or id == typeid.ABSOLUTE_TIME or id == typeid.RELATIVE_TIME or 
             id == typeid.STRINGZ or id == typeid.BYTES or id == typeid.UBYTES or 
-            id == typeid.NONE or id == typeid.GUID or id == typeid.OID or id == typeid.PROTOCOL or
+            id == typeid.NONE or id == typeid.OID or id == typeid.PROTOCOL or
             id == typeid.REL_OID or id == typeid.SYSTEMID or id == typeid.EUI64 then
             assert(size, "Please check size values! All types without fixed length require the 'size' property.")
             return size
