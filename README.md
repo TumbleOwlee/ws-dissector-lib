@@ -125,6 +125,20 @@ field = {
     }
 }
 ```
+The possible field types are given by the predefined typeid table
+```lua
+ typeid = {
+        COMPOSITE  =  1, CHAR          =  2, UINT8         =  3, LE_UINT16 =  4, BE_UINT16 =  5, 
+        LE_UINT24  =  6, BE_UINT24     =  7, LE_UINT32     =  8, BE_UINT32 =  9, LE_UINT64 = 10, 
+        BE_UINT64  = 11, INT8          = 12, LE_INT16      = 13, BE_INT16  = 14, LE_INT24  = 15,
+        BE_INT24   = 16, LE_INT32      = 17, BE_INT32      = 18, LE_INT64  = 19, BE_INT64  = 20,
+        BOOL       = 21, ABSOLUTE_TIME = 22, RELATIVE_TIME = 23, FLOAT     = 24, DOUBLE    = 25,
+        STRING     = 26, STRINGZ       = 27, BYTES         = 28, UBYTES    = 29, NONE      = 30,
+        IPV4       = 31, IPV6          = 32, ETHER         = 33, GUID      = 34, OID       = 35,
+        PROTOCOL   = 36, REL_OID       = 37, SYSTEMID      = 38, EUID64    = 39, BITMASK   = 40,
+        BITMASK16  = 41, BITMASK24     = 42, BITMASK32     = 43, BITMASK64 = 44,
+    }
+```
 The special type *COMPOSITE* will create a substructure and allows to repeat a substructure multiple times. Each repitition will consume its own bytes. In comparison, all fields stored in the special structures *BITMASK*, *BITMASK16*, *BITMASK24*, *BITMASK32* and *BITMASK64* will get the same bytes. So, a *COMPOSITE* of four *BE_UINT32* will consume 16 bytes, but a *BITMASK32* of four *BE_UINT32* will only consume 4 bytes. Normally, a *BITMASKXX* will only contain fields of type *BE_UINTXX*.
 
 ## Usage
