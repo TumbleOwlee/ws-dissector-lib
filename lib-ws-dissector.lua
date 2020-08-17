@@ -13,11 +13,11 @@ do
     }
 
     local function typeid_to_ftype(id)
-        if id == typeid.LE_UINT32 or id == typeid.BE_UINT32 then
+        if (id == typeid.LE_UINT32) or (id == typeid.BE_UINT32) then
             return ftypes.UINT32
-        elseif id == typeid.LE_UINT24 or id == typeid.BE_UINT24 then
+        elseif (id == typeid.LE_UINT24) or (id == typeid.BE_UINT24) then
             return ftypes.UINT24
-        elseif id == typeid.LE_UINT16 or id == typeid.BE_UINT16 then
+        elseif (id == typeid.LE_UINT16) or (id == typeid.BE_UINT16) then
             return ftypes.UINT16
         elseif id == typeid.UINT8 then
             return ftypes.UINT8
@@ -29,9 +29,9 @@ do
     end
 
     local function typeid_to_value(id, buffer)
-        if id == typeid.LE_UINT8 or id == typeid.LE_UINT16 or id == typeid.LE_UINT24 or id == typeid.LE_UINT32 then
+        if id == typeid.LE_UINT16 or id == typeid.LE_UINT24 or id == typeid.LE_UINT32 then
             return buffer:le_uint()
-        elseif id == typeid.BE_UINT8 or id == typeid.BE_UINT16 or id == typeid.BE_UINT24 or id == typeid.BE_UINT32 then
+        elseif id == typeid.UINT8 or id == typeid.BE_UINT16 or id == typeid.BE_UINT24 or id == typeid.BE_UINT32 then
             return buffer:uint()
         elseif id == typeid.STRING then
             return buffer:string()
@@ -44,7 +44,6 @@ do
 
     local function create_protofield(prefix, field_spec)
         local abbr = prefix..'.'..field_spec.abbr
-        print(abbr)
         local id = field_spec.type_id
         if id == typeid.CHAR then 
             return ProtoField.char(abbr, field_spec.name, field_spec.base, field_spec.valuestring, field_spec.mask, field_spec.desc)
@@ -188,6 +187,7 @@ do
         local size = 0
         for k, v in pairs(spec) do
             local multiplier = 1
+            size = (v.offset and v.offset > 0 and (size + v.offset)) or size
             if v.max_reps and not v.rep_dep then
                 multiplier = v.max_reps
             end
@@ -225,33 +225,55 @@ do
         for k, v in pairs(spec) do
             local reps = v.max_reps or 1
             for idx = 1,reps do
-                root:add(v.proto_fields[(num-1)*reps+idx], buffer(offset, size))
+                local value_buffer = buffer(offset, size)
+                if v.mapping then
+                    value_buffer = v.mapping(value_buffer)
+                end
+                root:add(v.proto_fields[(num-1)*reps+idx], value_buffer)
             end
         end
     end
 
 
-    local function generate_dissection(protocol, root, spec, buffer, offset, num, size_map) 
+    local function generate_dissection(protocol, root, spec, buffer, offset, num, size_map, skipped, start) 
         local size_map = size_map or {}
-        local size, offset, num, key = 0, offset or 0, num or 1, nil
+        local size, offset, num, key, skipped, start = 0, offset or 0, num or 1, nil, skipped or nil, start or nil
         for k, v in pairs(spec) do
             local reps = try_get_size(size_map, v.rep_dep) or v.max_reps or 1
             for idx = 1,reps do 
+                if not skipped and v.offset then
+                    start = size
+                    skipped = (v.offset >= 0 and v.offset) or (v.offset < 0 and (buffer:len() + v.offset - size))
+                    size = (v.offset >= 0 and (size + v.offset)) or (v.offset < 0 and (buffer:len() + v.offset))
+                elseif skipped and v.offset then
+                    error("You can not set offset multiple times!")
+                end
                 if v.type_id == typeid.BITMASK or v.type_id == typeid.BITMASK16 or 
                         v.type_id == typeid.BITMASK24 or v.type_id == typeid.BITMASK32 or 
                         v.type_id == typeid.BITMASK64 then
-                    local tree = (v.name and root:add(protocol, buffer, v.name)) or root
+                    local name = v.name
+                    if v.name and 'function' == type(v.name) then
+                        name = v.name(buffer(offset+size, get_type_size(v.type_id, v.size)))
+                    end
+                    local tree = (name and root:add(protocol, buffer, name)) or root
                     generate_dissection_bitmask(protocol, tree, v.sub_spec, buffer, offset+size, (num-1)*reps+idx, get_type_size(v.type_id, v.size))
                     size = size + get_type_size(v.type_id, v.size)
                 elseif v.type_id == typeid.COMPOSITE then
-                    local tree = (v.name and root:add(protocol, buffer, v.name)) or root
-                    local sub_size, sub_key = generate_dissection(protocol, tree, v.sub_spec, buffer, offset+size, (num-1)*reps+idx, size_map)
-                    key, size = key or sub_key, size + sub_size
+                    local name = v.name
+                    if v.name and 'function' == type(v.name) then
+                        name = v.name(buffer(offset+size, get_min_protocol_size(v.sub_spec)))
+                    end
+                    local tree = (name and root:add(protocol, buffer, name)) or root
+                    local sub_size, sub_start, sub_skipped, sub_key = generate_dissection(protocol, tree, v.sub_spec, buffer, offset+size, (num-1)*reps+idx, size_map, skipped, start)
+                    key, size, start, skipped = key or sub_key, size + sub_size, start or sub_start, skipped or sub_skipped
                 else
                     local type_size = try_get_size(size_map, get_type_size(v.type_id, v.size))
                     local value_buffer = buffer(offset+size, type_size)
                     key = (v.is_key and value_buffer) or key
                     add_size_to_map(size_map, value_buffer, v.abbr, v.type_id)
+                    if v.mapping then
+                        value_buffer = v.mapping(value_buffer)
+                    end
                     if is_little_endian(v.type_id) then
                         root:add_le(v.proto_fields[(num-1)*reps+idx], value_buffer)
                     else
@@ -261,7 +283,7 @@ do
                 end
             end
         end
-        return size, key
+        return size, start, skipped, key
     end
 
 
@@ -310,27 +332,52 @@ do
 
         local size = get_min_protocol_size(config.spec)
         protocol.dissector = function(buffer, pinfo, tree)
+            if config.pre_dissection then
+                if not config.pre_dissection(config, protocol, buffer, pinfo, tree) then
+                    return
+                end
+            end
             if buffer:len() <= size then
                 return
             else
-                if config.pre_dissection then
-                    config.pre_dissection(config, protocol, buffer, pinfo, tree)
+                if config.col_info then
+                    pinfo.cols.info:set(config.col_info(buffer))
                 end
                 pinfo.cols.protocol = protocol.name
                 local subtree = tree
                 if not config.no_subtree then
-                    subtree = tree:add(protocol, buffer(), config.description)
+                    local label = config.label
+                    if type(config.label) == 'function' then
+                        label = config.label(buffer)
+                    end
+                    subtree = tree:add(protocol, buffer(), label)
                 end
-                local offset, key = generate_dissection(protocol, subtree, config.spec, buffer)
-                if buffer:len() > offset and config.key then
-                    protocol_table:try(typeid_to_value(config.key.type_id, key), buffer:range(offset):tvb(), pinfo, subtree)
+                local offset, skipstart, skipsize, key = generate_dissection(protocol, subtree, config.spec, buffer)
+                if (buffer:len() > offset) or (skipsize and buffer:len() > (offset - skipsize)) and config.key then
+                    local sub_buf = nil
+                    if skipstart and skipsize then
+                        sub_buf = buffer:range(skipstart, skipsize):tvb()
+                    else 
+                        sub_buf = buffer:range(offset):tvb()
+                    end
+                    if key then
+                        protocol_table:try(typeid_to_value(config.key.type_id, key), sub_buf, pinfo, subtree)
+                    else
+                        protocol_table:try(0, sub_buf, pinfo, subtree)
+                    end
                 end
             end
         end
 
         if config.after then
             local dependency_table = DissectorTable.get(config.after.name..'.'..config.after.key)
-            dependency_table:add(config.after.value, protocol)
+            if type(config.after.value) == 'table' then
+                for k, v in pairs(config.after.value) do
+                    dependency_table:add(v, protocol)
+                end
+            else
+                dependency_table:add(config.after.value, protocol)
+            end
         end
 
         return protocol, table

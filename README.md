@@ -38,6 +38,10 @@ config = {
     name = 'protocol',
     -- protocol description  (see 11.6.5.1)
     description = 'description',
+    -- the label of the protocol tree can be set
+    label = 'custom tree label of the protocol',
+    -- it can also be a function, the whole payload buffer is given as input
+    label = function(buffer) return "The first byte is "..buffer(0,1):uint() end,
     -- [OPTIONAL] filter 
     port_filter = {
         -- protocol 
@@ -49,6 +53,8 @@ config = {
         -- maximum value (see 11.6.3.7)
         max_value = 65535
     }
+    -- allows to customize the text written to pinfo.cols.info
+    col_info = function(buffer) end,
     -- [OPTIONAL] callback to modify the config on initialization 
     pre_init = function(config) end,
     -- [OPTIONAL] callback to access the config, protocol (Proto) and table (DissectorTable)
@@ -56,7 +62,8 @@ config = {
     -- [OPTIONAL] callback to access the config, protocol and table after creation of all ProtoFields
     -- the generated ProtoField instances can be accessed in the associated item in the table 'proto_fields'
     post_parse = function(config, protocol, table) end,
-    -- [OPTIONAL] callback to access the data before dissection as given by wireshark.
+    -- [OPTIONAL] callback to access the data upfront and customize the choice to drop it or not
+    -- this function has to return true to allow dissection, else it is dropped
     pre_dissection = function(config, protocol, buffer, pinfo, tree) end,
     -- [OPTIONAL] only necessary if dissector depends on another dissector
     after = {
@@ -87,8 +94,16 @@ field = {
     type_id = typeid.UINT32,
     -- name (see 11.6.7.1) (in case of BITMASK and COMPOSITE only necessary if subtree shall be created)
     name = 'SomeName',
+    -- name can also be a function - the buffer of the field is given as input
+    name = function(buffer) if buffer:uint() == 1 then return "TRUE" else "FALSE" end,
     -- abbreviation (see 11.6.7.1)
     abbr = 'some_abbr',
+    -- to skip some bytes or to jump to the last x bytes because of checksum negative values will result 
+    -- in jump to the last minus x byte this setting is only allowed once - the skipped bytes will be 
+    -- forwarded to the chained dissector instead of the remaining bytes
+    offset = -8,
+    -- positive values will just result in a simple skip of the next x bytes
+    offset = 20,
     -- base (see 11.6.7.1) (unused by BITMASK and COMPOSITE)
     base = base.HEX,
     -- mask (see 11.6.7.1) (unused by BITMASK and COMPOSITE)
