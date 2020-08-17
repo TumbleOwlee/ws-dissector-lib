@@ -104,9 +104,11 @@ field = {
     offset = -8,
     -- positive values will just result in a simple skip of the next x bytes
     offset = 20,
-    -- base (see 11.6.7.1) (unused by BITMASK and COMPOSITE)
+    -- base (see 11.6.7) (unused by BITMASK and COMPOSITE)
     base = base.HEX,
-    -- mask (see 11.6.7.1) (unused by BITMASK and COMPOSITE)
+    -- some ProtoField use 'display' to specify the base value (see 11.6.7) 
+    display = base.DASH,
+    -- mask (see 11.6.7) (unused by BITMASK and COMPOSITE)
     mask = 0xFFFF,
     -- size of the field in bytes (only necessary if type size is not defined (ex. strings))
     -- can also be used to override predefined sizes, for example to only read 5 bytes instead of 8 for UINT64
