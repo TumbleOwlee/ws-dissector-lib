@@ -117,6 +117,8 @@ field = {
     max_reps = 10,
     -- mapping table (see 11.6.7.1) (unused by BITMASK and COMPOSITE)
     valuestring = {},
+    -- defines whether the field is the key or not (only supported for integer and string types)
+    is_key = true,
     -- sub fields, only for BITMASK and COMPOSITE
     sub_spec = {
         ...
