@@ -118,8 +118,11 @@ field = {
     size = 10,
     -- also possible if another field with abbr == 'type' exists to allow dynamic size on dissection
     size = 'type',
-    -- maximal repititions of this field. if size is set, this is the upper bound
+    -- maximal repetitions of this field
     max_reps = 10,
+    -- if actual number of repetitions depend on a given field, it can be linked and at dissection only
+    -- so many repetitions as given by the value of the field are dissected
+    rep_dep = 'type',
     -- mapping table (see 11.6.7.1) (unused by BITMASK and COMPOSITE)
     valuestring = {},
     -- defines whether the field is the key or not (only supported for integer and string types)
@@ -144,7 +147,7 @@ The possible field types are given by the predefined typeid table
         BITMASK16  = 41, BITMASK24     = 42, BITMASK32     = 43, BITMASK64 = 44,
     }
 ```
-The special type *COMPOSITE* will create a substructure and allows to repeat a substructure multiple times. Each repitition will consume its own bytes. In comparison, all fields stored in the special structures *BITMASK*, *BITMASK16*, *BITMASK24*, *BITMASK32* and *BITMASK64* will get the same bytes. So, a *COMPOSITE* of four *BE_UINT32* will consume 16 bytes, but a *BITMASK32* of four *BE_UINT32* will only consume 4 bytes. Normally, a *BITMASKXX* will only contain fields of type *BE_UINTXX*.
+The special type *COMPOSITE* will create a substructure and allows to repeat a substructure multiple times. Each repetition will consume its own bytes. In comparison, all fields stored in the special structures *BITMASK*, *BITMASK16*, *BITMASK24*, *BITMASK32* and *BITMASK64* will get the same bytes. So, a *COMPOSITE* of four *BE_UINT32* will consume 16 bytes, but a *BITMASK32* of four *BE_UINT32* will only consume 4 bytes. Normally, a *BITMASKXX* will only contain fields of type *BE_UINTXX*.
 
 ## Usage
 At first, you have to create a configuration as shown in section **Configuration**. Afterwards just pass the table to the provided generator. 
