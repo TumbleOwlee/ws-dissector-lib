@@ -117,10 +117,11 @@ do
                 if v.type_id == typeid.COMPOSITE or v.type_id == typeid.BITMASK or 
                     v.type_id == typeid.BITMASK16 or v.type_id == typeid.BITMASK24 or
                     v.type_id == typeid.BITMASK32 or v.type_id == typeid.BITMASK64 then
+                    local name = (v.abbr and (prefix..'.'..v.abbr)) or prefix
                     if max_reps > 1 then
-                        parse_specification(protocol, prefix..'.'..v.abbr..idx, v.sub_spec)
+                        parse_specification(protocol, name..idx, v.sub_spec)
                     else
-                        parse_specification(protocol, prefix..'.'..v.abbr, v.sub_spec)
+                        parse_specification(protocol, name, v.sub_spec)
                     end
                 else
                     v.proto_fields = v.proto_fields or {}
@@ -359,6 +360,9 @@ do
                         sub_buf = buffer:range(skipstart, skipsize):tvb()
                     else 
                         sub_buf = buffer:range(offset):tvb()
+                    end
+                    if config.pass_root then
+                        subtree = tree
                     end
                     if key then
                         protocol_table:try(typeid_to_value(config.key.type_id, key), sub_buf, pinfo, subtree)
