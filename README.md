@@ -2,7 +2,7 @@
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/TumbleOwlee/ws-dissector-lib/blob/master/LICENSE)
 
 ## What is it?
-This library provides an abstraction to generate [Wireshark](https://wireshark.com/) dissectors based on a given configuration. It allows fast prototyping of custom protocol dissectors with support of dissector chaining. It arises from the need for working dissectors without a guarantee of stable procotol specifications in the workplace.
+This library provides an abstraction to generate [Wireshark](https://wireshark.com/) dissectors based on a given configuration. It allows fast prototyping of custom protocol dissectors with support of dissector chaining. It arises from the need for working dissectors without a guarantee of stable protocol specifications in the workplace.
 
 ## WARNING
 This library is still in the *very* early stage of development and only a side project. Most features are supported for simple types like (unsigned) integer, string, bitmasks and compositions. Additional types like ipv4 and ipv6 with fixed sizes should also work. Special types like GUID are not tested and thus can be broken. Some types, such as RELATIVE_TIME, do not have predefined sizes at the moment, therefore if you encounter any dissector failures, try setting the size property to override defaults.
@@ -123,11 +123,13 @@ field = {
     -- if actual number of repetitions depend on a given field, it can be linked and at dissection only
     -- so many repetitions as given by the value of the field are dissected
     rep_dep = 'type',
-    -- mapping table (see 11.6.7.1) (unused by BITMASK and COMPOSITE)
+    -- mapping table (see 11.6.7.1) (unused by BITMASK and COMPOSITE but also supported for STRING and STRINGZ)
     valuestring = {},
     -- defines whether the field is the key or not (only supported for integer and string types)
     is_key = true,
-    -- sub fields, only for BITMASK and COMPOSITE
+    -- define a custom function to do with the buffer what ever you want
+    mapping = function(buffer) return buffer:string() end,
+    -- subfields, only for BITMASK and COMPOSITE
     sub_spec = {
         ...
     }

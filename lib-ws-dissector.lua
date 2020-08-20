@@ -78,9 +78,11 @@ do
         elseif id == typeid.DOUBLE then
             return ProtoField.double(abbr, field_spec.name, field_spec.valuestring, field_spec.desc)
         elseif id == typeid.STRING then
+            if field_spec.valuestring and not field_spec.mapping then field_spec.mapping = field_spec.valuestring end
             return ProtoField.string(abbr, field_spec.name, field_spec.display, field_spec.desc)
         elseif id == typeid.STRINGZ then
-            return ProtoField.string(abbr, field_spec.name, field_spec.display, field_spec.desc)
+            if field_spec.valuestring and not field_spec.mapping then field_spec.mapping = field_spec.valuestring end
+            return ProtoField.stringz(abbr, field_spec.name, field_spec.display, field_spec.desc)
         elseif id == typeid.BYTES then
             return ProtoField.bytes(abbr, field_spec.name, field_spec.display, field_spec.desc)
         elseif id == typeid.UBYTES then
@@ -273,7 +275,11 @@ do
                     key = (v.is_key and value_buffer) or key
                     add_size_to_map(size_map, value_buffer, v.abbr, v.type_id)
                     if v.mapping then
+                        if type(v.mapping) == 'function' then
                         value_buffer = v.mapping(value_buffer)
+                        elseif v.type_id == typeid.STRING or v.type_id == typeid.STRINGZ  then
+                            value_buffer = v.mapping[value_buffer:string()] or value_buffer
+                        end
                     end
                     if is_little_endian(v.type_id) then
                         root:add_le(v.proto_fields[(num-1)*reps+idx], value_buffer)
