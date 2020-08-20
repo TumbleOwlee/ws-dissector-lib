@@ -4,6 +4,11 @@
 ## What is it?
 This library provides an abstraction to generate [Wireshark](https://wireshark.com/) dissectors based on a given configuration. It allows fast prototyping of custom protocol dissectors with support of dissector chaining. It arises from the need for working dissectors without a guarantee of stable protocol specifications in the workplace.
 
+## Alternatives
+I stumbled over the following alternatives. You can check them out and make a choice afterwards.
+* [Wireshark Generic Dissector](http://wsgd.free.fr/index.html)
+* [CSjark](https://csjark.readthedocs.io/en/latest/user/intro.html)
+
 ## WARNING
 This library is still in the *very* early stage of development and only a side project. Most features are supported for simple types like (unsigned) integer, string, bitmasks and compositions. Additional types like ipv4 and ipv6 with fixed sizes should also work. Special types like GUID are not tested and thus can be broken. Some types, such as RELATIVE_TIME, do not have predefined sizes at the moment, therefore if you encounter any dissector failures, try setting the size property to override defaults.
 
