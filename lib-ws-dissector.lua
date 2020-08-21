@@ -114,23 +114,14 @@ do
 
     local function parse_specification(protocol, prefix, spec)
         for k, v in pairs(spec) do
-            local max_reps = v.max_reps or 1
-            for idx = 1,max_reps do
-                if v.type_id == typeid.COMPOSITE or v.type_id == typeid.BITMASK or 
-                    v.type_id == typeid.BITMASK16 or v.type_id == typeid.BITMASK24 or
-                    v.type_id == typeid.BITMASK32 or v.type_id == typeid.BITMASK64 then
-                    local name = (v.abbr and (prefix..'.'..v.abbr)) or prefix
-                    if max_reps > 1 then
-                        parse_specification(protocol, name..idx, v.sub_spec)
-                    else
-                        parse_specification(protocol, name, v.sub_spec)
-                    end
-                else
-                    v.proto_fields = v.proto_fields or {}
-                    local field = create_protofield(prefix, v)
-                    table.insert(v.proto_fields, field)
-                    table.insert(protocol.fields, field)
-                end
+            if v.type_id == typeid.COMPOSITE or v.type_id == typeid.BITMASK or 
+                v.type_id == typeid.BITMASK16 or v.type_id == typeid.BITMASK24 or
+                v.type_id == typeid.BITMASK32 or v.type_id == typeid.BITMASK64 then
+                local name = (v.abbr and (prefix..'.'..v.abbr)) or prefix
+                parse_specification(protocol, name, v.sub_spec)
+            else
+                v.proto_field = create_protofield(prefix, v)
+                table.insert(protocol.fields, v.proto_field)
             end
         end
     end
@@ -191,7 +182,7 @@ do
         for k, v in pairs(spec) do
             local multiplier = 1
             size = (v.offset and v.offset > 0 and (size + v.offset)) or size
-            if v.max_reps and not v.rep_dep then
+            if v.max_reps and type(v.max_reps) ~= 'string' then
                 multiplier = v.max_reps
             end
             if v.type_id == typeid.COMPOSITE then
@@ -224,25 +215,36 @@ do
         end
     end
 
-    local function generate_dissection_bitmask(protocol, root, spec, buffer, offset, num, size)
+    local function generate_dissection_bitmask(protocol, root, spec, buffer, offset, size)
         for k, v in pairs(spec) do
             local reps = v.max_reps or 1
             for idx = 1,reps do
-                local value_buffer = buffer(offset, size)
-                if v.mapping then
-                    value_buffer = v.mapping(value_buffer)
+                if v.type_id == typeid.BITMASK or v.type_id == typeid.BITMASK16 or 
+                        v.type_id == typeid.BITMASK24 or v.type_id == typeid.BITMASK32 or 
+                        v.type_id == typeid.BITMASK64 then
+                    local name = v.name
+                    if v.name and 'function' == type(v.name) then
+                        name = v.name(buffer(offset, size))
+                    end
+                    local tree = (name and root:add(protocol, buffer, name)) or root
+                    generate_dissection_bitmask(protocol, tree, v.sub_spec, buffer, offset, size)
+                else
+                    local value_buffer = buffer(offset, size)
+                    if v.mapping then
+                        value_buffer = v.mapping(value_buffer)
+                    end
+                    root:add(v.proto_field, value_buffer)
                 end
-                root:add(v.proto_fields[(num-1)*reps+idx], value_buffer)
             end
         end
     end
 
 
-    local function generate_dissection(protocol, root, spec, buffer, offset, num, size_map, skipped, start) 
+    local function generate_dissection(protocol, root, spec, buffer, offset, size_map, skipped, start) 
         local size_map = size_map or {}
-        local size, offset, num, key, skipped, start = 0, offset or 0, num or 1, nil, skipped or nil, start or nil
+        local size, offset, key, skipped, start = 0, offset or 0, nil, skipped or nil, start or nil
         for k, v in pairs(spec) do
-            local reps = try_get_size(size_map, v.rep_dep) or v.max_reps or 1
+            local reps = try_get_size(size_map, v.max_reps) or 1
             for idx = 1,reps do 
                 if not skipped and v.offset then
                     start = size
@@ -259,7 +261,9 @@ do
                         name = v.name(buffer(offset+size, get_type_size(v.type_id, v.size)))
                     end
                     local tree = (name and root:add(protocol, buffer, name)) or root
-                    generate_dissection_bitmask(protocol, tree, v.sub_spec, buffer, offset+size, (num-1)*reps+idx, get_type_size(v.type_id, v.size))
+
+                    generate_dissection_bitmask(protocol, tree, v.sub_spec, buffer, offset+size, get_type_size(v.type_id, v.size))
+
                     size = size + get_type_size(v.type_id, v.size)
                 elseif v.type_id == typeid.COMPOSITE then
                     local name = v.name
@@ -267,7 +271,7 @@ do
                         name = v.name(buffer(offset+size, get_min_protocol_size(v.sub_spec)))
                     end
                     local tree = (name and root:add(protocol, buffer, name)) or root
-                    local sub_size, sub_start, sub_skipped, sub_key = generate_dissection(protocol, tree, v.sub_spec, buffer, offset+size, (num-1)*reps+idx, size_map, skipped, start)
+                    local sub_size, sub_start, sub_skipped, sub_key = generate_dissection(protocol, tree, v.sub_spec, buffer, offset+size, size_map, skipped, start)
                     key, size, start, skipped = key or sub_key, size + sub_size, start or sub_start, skipped or sub_skipped
                 else
                     local type_size = try_get_size(size_map, get_type_size(v.type_id, v.size))
@@ -282,9 +286,9 @@ do
                         end
                     end
                     if is_little_endian(v.type_id) then
-                        root:add_le(v.proto_fields[(num-1)*reps+idx], value_buffer)
+                        root:add_le(v.proto_field, value_buffer)
                     else
-                        root:add(v.proto_fields[(num-1)*reps+idx], value_buffer)
+                        root:add(v.proto_field, value_buffer)
                     end
                     size = size + type_size
                 end
@@ -340,11 +344,11 @@ do
         local size = get_min_protocol_size(config.spec)
         protocol.dissector = function(buffer, pinfo, tree)
             if config.pre_dissection then
-                if not config.pre_dissection(config, protocol, buffer, pinfo, tree) then
+                if not config.pre_dissection(config, protocol, buffer, pinfo, tree, size) then
                     return
                 end
             end
-            if buffer:len() <= size then
+            if buffer:len() < size then
                 return
             else
                 if config.col_info then
