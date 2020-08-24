@@ -230,10 +230,19 @@ do
                     generate_dissection_bitmask(protocol, tree, v.sub_spec, buffer, offset, size)
                 else
                     local value_buffer = buffer(offset, size)
+                    local mapped_value = nil
                     if v.mapping then
-                        value_buffer = v.mapping(value_buffer)
+                        if type(v.mapping) == 'function' then
+                            mapped_value = v.mapping(value_buffer)
+                        elseif v.type_id == typeid.STRING or v.type_id == typeid.STRINGZ  then
+                            mapped_value = v.mapping[value_buffer:string()]
+                        end
                     end
-                    root:add(v.proto_field, value_buffer)
+                    if mapped_value then
+                        root:add(v.proto_field, value_buffer, mapped_value)
+                    else
+                        root:add(v.proto_field, value_buffer)
+                    end
                 end
             end
         end
@@ -278,17 +287,26 @@ do
                     local value_buffer = buffer(offset+size, type_size)
                     key = (v.is_key and value_buffer) or key
                     add_size_to_map(size_map, value_buffer, v.abbr, v.type_id)
+                    local mapped_value = nil
                     if v.mapping then
                         if type(v.mapping) == 'function' then
-                        value_buffer = v.mapping(value_buffer)
+                            mapped_value = v.mapping(value_buffer)
                         elseif v.type_id == typeid.STRING or v.type_id == typeid.STRINGZ  then
-                            value_buffer = v.mapping[value_buffer:string()] or value_buffer
+                            mapped_value = v.mapping[value_buffer:string()]
                         end
                     end
                     if is_little_endian(v.type_id) then
-                        root:add_le(v.proto_field, value_buffer)
+                        if mapped_value then
+                            root:add_le(v.proto_field, value_buffer, mapped_value)
+                        else
+                            root:add_le(v.proto_field, value_buffer)
+                        end
                     else
-                        root:add(v.proto_field, value_buffer)
+                        if mapped_value then
+                            root:add(v.proto_field, value_buffer, mapped_value)
+                        else
+                            root:add(v.proto_field, value_buffer)
+                        end
                     end
                     size = size + type_size
                 end
